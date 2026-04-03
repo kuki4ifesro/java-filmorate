@@ -43,9 +43,16 @@ class UserValidationTest {
 	}
 
 	@Test
-	void malformedEmail_isInvalid() {
+	void emailWithEmptyLocalPart_isInvalid() {
 		User user = validUser();
-		user.setEmail("это-неправильный?эмейл@.");
+		user.setEmail("@example.com");
+		assertViolation(user, "email");
+	}
+
+	@Test
+	void emailWithSpacesAround_isInvalid() {
+		User user = validUser();
+		user.setEmail("user @mail.ru");
 		assertViolation(user, "email");
 	}
 

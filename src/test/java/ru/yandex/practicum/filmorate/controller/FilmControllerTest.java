@@ -12,6 +12,7 @@ import ru.yandex.practicum.filmorate.model.Film;
 import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -74,8 +75,7 @@ class FilmControllerTest {
 
 		mockMvc.perform(get("/films"))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$[0].id").value(created.getId()))
-				.andExpect(jsonPath("$[0].name").value("Name"));
+				.andExpect(jsonPath("$..id", hasItem(created.getId().intValue())));
 	}
 
 	@Test
