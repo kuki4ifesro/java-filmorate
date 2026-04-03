@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import ru.yandex.practicum.filmorate.exception.ResourceNotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 
@@ -48,7 +49,7 @@ public class UserController {
 		}
 		if (!users.containsKey(user.getId())) {
 			log.warn("Попытка обновить несуществующего пользователя id={}", user.getId());
-			throw new ValidationException("Пользователь с id=" + user.getId() + " не найден");
+			throw new ResourceNotFoundException("Пользователь с id=" + user.getId() + " не найден");
 		}
 		users.put(user.getId(), user);
 		log.info("Обновлён пользователь id={}, login={}", user.getId(), user.getLogin());
