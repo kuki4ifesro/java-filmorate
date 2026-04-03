@@ -9,6 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.yandex.practicum.filmorate.model.User;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -63,7 +64,7 @@ class UserControllerTest {
 				.andExpect(status().isOk())
 				.andReturn()
 				.getResponse()
-				.getContentAsString();
+				.getContentAsString(StandardCharsets.UTF_8);
 
 		User created = objectMapper.readValue(body, User.class);
 		assertThat(created.getName()).isEqualTo("dolores");

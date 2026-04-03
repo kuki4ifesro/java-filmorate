@@ -9,6 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.yandex.practicum.filmorate.model.Film;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -67,7 +68,7 @@ class FilmControllerTest {
 				.andExpect(jsonPath("$.id").exists())
 				.andReturn()
 				.getResponse()
-				.getContentAsString();
+				.getContentAsString(StandardCharsets.UTF_8);
 
 		Film created = objectMapper.readValue(response, Film.class);
 		assertThat(created.getId()).isNotNull();
@@ -91,6 +92,7 @@ class FilmControllerTest {
 						.contentType(MediaType.APPLICATION_JSON)
 						.content(objectMapper.writeValueAsString(film)))
 				.andExpect(status().isBadRequest())
-				.andExpect(result -> assertThat(result.getResponse().getContentAsString()).contains("не найден"));
+				.andExpect(result -> assertThat(result.getResponse().getContentAsString(StandardCharsets.UTF_8))
+						.contains("не найден"));
 	}
 }
