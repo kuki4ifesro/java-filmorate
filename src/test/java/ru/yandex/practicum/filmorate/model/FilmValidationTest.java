@@ -6,6 +6,7 @@ import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import ru.yandex.practicum.filmorate.validation.Create;
 
 import java.time.LocalDate;
 import java.util.Set;
@@ -25,7 +26,7 @@ class FilmValidationTest {
 	@Test
 	void validFilm_hasNoViolations() {
 		Film film = validFilm();
-		Set<ConstraintViolation<Film>> violations = validator.validate(film);
+		Set<ConstraintViolation<Film>> violations = validator.validate(film, Create.class);
 		assertThat(violations).isEmpty();
 	}
 
@@ -47,7 +48,7 @@ class FilmValidationTest {
 	void descriptionExactly200_isValid() {
 		Film film = validFilm();
 		film.setDescription("a".repeat(200));
-		assertThat(validator.validate(film)).isEmpty();
+		assertThat(validator.validate(film, Create.class)).isEmpty();
 	}
 
 	@Test
@@ -68,7 +69,7 @@ class FilmValidationTest {
 	void releaseDateOnCinemaBirthday_isValid() {
 		Film film = validFilm();
 		film.setReleaseDate(LocalDate.of(1895, 12, 28));
-		assertThat(validator.validate(film)).isEmpty();
+		assertThat(validator.validate(film, Create.class)).isEmpty();
 	}
 
 	@Test
@@ -102,7 +103,7 @@ class FilmValidationTest {
 	}
 
 	private void assertViolation(Film film, String field) {
-		assertThat(validator.validate(film))
+		assertThat(validator.validate(film, Create.class))
 				.anyMatch(v -> v.getPropertyPath().toString().equals(field));
 	}
 }

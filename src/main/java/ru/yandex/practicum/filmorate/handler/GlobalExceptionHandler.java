@@ -7,10 +7,10 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import ru.yandex.practicum.filmorate.dto.ErrorResponse;
 import ru.yandex.practicum.filmorate.exception.ResourceNotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -19,32 +19,32 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler(ValidationException.class)
 	@ResponseStatus(HttpStatus.BAD_REQUEST)
-	public Map<String, String> handleValidationException(ValidationException e) {
+	public ErrorResponse handleValidationException(ValidationException e) {
 		log.warn("Ошибка валидации: {}", e.getMessage());
-		return Map.of("error", e.getMessage());
+		return new ErrorResponse(e.getMessage());
 	}
 
 	@ExceptionHandler(ResourceNotFoundException.class)
 	@ResponseStatus(HttpStatus.NOT_FOUND)
-	public Map<String, String> handleResourceNotFound(ResourceNotFoundException e) {
+	public ErrorResponse handleResourceNotFound(ResourceNotFoundException e) {
 		log.warn("Сущность не найдена: {}", e.getMessage());
-		return Map.of("error", e.getMessage());
+		return new ErrorResponse(e.getMessage());
 	}
 
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	@ResponseStatus(HttpStatus.BAD_REQUEST)
-	public Map<String, String> handleMethodArgumentNotValid(MethodArgumentNotValidException e) {
+	public ErrorResponse handleMethodArgumentNotValid(MethodArgumentNotValidException e) {
 		String message = e.getBindingResult().getFieldErrors().stream()
 				.map(err -> err.getField() + ": " + err.getDefaultMessage())
 				.collect(Collectors.joining("; "));
 		log.warn("Ошибка валидации запроса: {}", message);
-		return Map.of("error", message);
+		return new ErrorResponse(message);
 	}
 
 	@ExceptionHandler(HttpMessageNotReadableException.class)
 	@ResponseStatus(HttpStatus.BAD_REQUEST)
-	public Map<String, String> handleNotReadable(HttpMessageNotReadableException e) {
+	public ErrorResponse handleNotReadable(HttpMessageNotReadableException e) {
 		log.warn("Тело запроса отсутствует или некорректно: {}", e.getMessage());
-		return Map.of("error", "Тело запроса отсутствует или имеет неверный формат");
+		return new ErrorResponse("Тело запроса отсутствует или имеет неверный формат");
 	}
 }

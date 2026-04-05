@@ -6,6 +6,8 @@ import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import ru.yandex.practicum.filmorate.validation.Create;
+import ru.yandex.practicum.filmorate.validation.PatchValue;
 
 import java.time.LocalDate;
 import java.util.Set;
@@ -25,7 +27,7 @@ class UserValidationTest {
 	@Test
 	void validUser_hasNoViolations() {
 		User user = validUser();
-		assertThat(validator.validate(user)).isEmpty();
+		assertThat(validator.validate(user, Create.class)).isEmpty();
 	}
 
 	@Test
@@ -74,7 +76,7 @@ class UserValidationTest {
 	void blankDisplayName_isValid() {
 		User user = validUser();
 		user.setName("   ");
-		assertThat(validator.validate(user)).isEmpty();
+		assertThat(validator.validate(user, Create.class)).isEmpty();
 	}
 
 	@Test
@@ -88,7 +90,14 @@ class UserValidationTest {
 	void todayBirthday_isValid() {
 		User user = validUser();
 		user.setBirthday(LocalDate.now());
-		assertThat(validator.validate(user)).isEmpty();
+		assertThat(validator.validate(user, Create.class)).isEmpty();
+	}
+
+	@Test
+	void blankDisplayNameOnPatch_isInvalid() {
+		User user = validUser();
+		user.setName("   ");
+		assertThat(validator.validateProperty(user, "name", PatchValue.class)).isNotEmpty();
 	}
 
 	private static User validUser() {
@@ -101,7 +110,7 @@ class UserValidationTest {
 	}
 
 	private void assertViolation(User user, String field) {
-		Set<ConstraintViolation<User>> violations = validator.validate(user);
+		Set<ConstraintViolation<User>> violations = validator.validate(user, Create.class);
 		assertThat(violations)
 				.anyMatch(v -> v.getPropertyPath().toString().equals(field));
 	}

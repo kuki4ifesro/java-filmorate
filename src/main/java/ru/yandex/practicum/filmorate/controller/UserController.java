@@ -1,7 +1,8 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -9,8 +10,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ru.yandex.practicum.filmorate.exception.ResourceNotFoundException;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.validation.Create;
+import ru.yandex.practicum.filmorate.validation.PatchValue;
+import ru.yandex.practicum.filmorate.validation.PropertyValidationSupport;
+import ru.yandex.practicum.filmorate.validation.Update;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,10 +23,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
+@Validated
 @RestController
 @RequestMapping("/users")
+@RequiredArgsConstructor
 public class UserController {
 
+	private final PropertyValidationSupport propertyValidation;
 	private final Map<Long, User> users = new ConcurrentHashMap<>();
 	private final AtomicLong idGenerator = new AtomicLong(1);
 
@@ -32,7 +39,7 @@ public class UserController {
 	}
 
 	@PostMapping
-	public User create(@Valid @RequestBody User user) {
+	public User create(@Validated(Create.class) @RequestBody User user) {
 		normalizeName(user);
 		user.setId(idGenerator.getAndIncrement());
 		users.put(user.getId(), user);
@@ -41,19 +48,35 @@ public class UserController {
 	}
 
 	@PutMapping
-	public User update(@Valid @RequestBody User user) {
-		normalizeName(user);
-		if (user.getId() == null) {
-			log.warn("Обновление пользователя: не указан id");
-			throw new ValidationException("Идентификатор пользователя должен быть указан");
+	public User update(@Validated(Update.class) @RequestBody User patch) {
+		if (!users.containsKey(patch.getId())) {
+			log.warn("Попытка обновить несуществующего пользователя id={}", patch.getId());
+			throw new ResourceNotFoundException("Пользователь с id=" + patch.getId() + " не найден");
 		}
-		if (!users.containsKey(user.getId())) {
-			log.warn("Попытка обновить несуществующего пользователя id={}", user.getId());
-			throw new ResourceNotFoundException("Пользователь с id=" + user.getId() + " не найден");
+		User existing = users.get(patch.getId());
+		mergeUser(existing, patch);
+		users.put(existing.getId(), existing);
+		log.info("Обновлён пользователь id={}, login={}", existing.getId(), existing.getLogin());
+		return existing;
+	}
+
+	private void mergeUser(User target, User patch) {
+		if (patch.getEmail() != null) {
+			propertyValidation.validatePropertyOrThrow(patch, "email", Create.class);
+			target.setEmail(patch.getEmail());
 		}
-		users.put(user.getId(), user);
-		log.info("Обновлён пользователь id={}, login={}", user.getId(), user.getLogin());
-		return user;
+		if (patch.getLogin() != null) {
+			propertyValidation.validatePropertyOrThrow(patch, "login", Create.class);
+			target.setLogin(patch.getLogin());
+		}
+		if (patch.getName() != null) {
+			propertyValidation.validatePropertyOrThrow(patch, "name", PatchValue.class);
+			target.setName(patch.getName());
+		}
+		if (patch.getBirthday() != null) {
+			propertyValidation.validatePropertyOrThrow(patch, "birthday", Create.class);
+			target.setBirthday(patch.getBirthday());
+		}
 	}
 
 	private void normalizeName(User user) {

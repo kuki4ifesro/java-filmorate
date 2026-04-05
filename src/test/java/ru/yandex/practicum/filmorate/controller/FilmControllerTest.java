@@ -80,6 +80,36 @@ class FilmControllerTest {
 	}
 
 	@Test
+	void partialUpdate_changesOnlySentFields() throws Exception {
+		Film full = new Film();
+		full.setName("Original");
+		full.setDescription("Desc");
+		full.setReleaseDate(LocalDate.of(2000, 1, 1));
+		full.setDuration(100);
+
+		String createdJson = mockMvc.perform(post("/films")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(objectMapper.writeValueAsString(full)))
+				.andExpect(status().isOk())
+				.andReturn()
+				.getResponse()
+				.getContentAsString(StandardCharsets.UTF_8);
+
+		Film created = objectMapper.readValue(createdJson, Film.class);
+
+		Film patch = new Film();
+		patch.setId(created.getId());
+		patch.setDuration(200);
+
+		mockMvc.perform(put("/films")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(objectMapper.writeValueAsString(patch)))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.name").value("Original"))
+				.andExpect(jsonPath("$.duration").value(200));
+	}
+
+	@Test
 	void putUnknownId_returnsNotFound() throws Exception {
 		Film film = new Film();
 		film.setId(999L);
