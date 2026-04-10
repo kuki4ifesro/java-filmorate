@@ -11,6 +11,8 @@ import ru.yandex.practicum.filmorate.validation.PatchValue;
 import ru.yandex.practicum.filmorate.validation.Update;
 
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 @Data
 public class User {
@@ -28,4 +30,5 @@ public class User {
 	@NotNull(groups = Create.class, message = "Дата рождения обязательна")
 	@PastOrPresent(message = "Дата рождения не может быть в будущем", groups = {Create.class, Update.class})
 	private LocalDate birthday;
+	private Set<Long> friends = new HashSet<>();
 }

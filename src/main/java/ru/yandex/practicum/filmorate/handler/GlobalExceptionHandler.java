@@ -47,4 +47,11 @@ public class GlobalExceptionHandler {
 		log.warn("Тело запроса отсутствует или некорректно: {}", e.getMessage());
 		return new ErrorResponse("Тело запроса отсутствует или имеет неверный формат");
 	}
+
+	@ExceptionHandler(Exception.class)
+	@ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+	public ErrorResponse handleUnhandled(Exception e) {
+		log.error("Внутренняя ошибка сервера", e);
+		return new ErrorResponse("Произошла внутренняя ошибка сервера");
+	}
 }

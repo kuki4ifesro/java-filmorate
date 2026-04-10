@@ -1,0 +1,46 @@
+package ru.yandex.practicum.filmorate.storage.user;
+
+import org.springframework.stereotype.Component;
+import ru.yandex.practicum.filmorate.model.User;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
+
+@Component
+public class InMemoryUserStorage implements UserStorage {
+
+	private final Map<Long, User> users = new ConcurrentHashMap<>();
+	private final AtomicLong idGenerator = new AtomicLong(1);
+
+	@Override
+	public User create(User user) {
+		user.setId(idGenerator.getAndIncrement());
+		users.put(user.getId(), user);
+		return user;
+	}
+
+	@Override
+	public User update(User user) {
+		users.put(user.getId(), user);
+		return user;
+	}
+
+	@Override
+	public void delete(Long userId) {
+		users.remove(userId);
+	}
+
+	@Override
+	public List<User> findAll() {
+		return new ArrayList<>(users.values());
+	}
+
+	@Override
+	public Optional<User> findById(Long userId) {
+		return Optional.ofNullable(users.get(userId));
+	}
+}
