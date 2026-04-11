@@ -7,6 +7,7 @@ import jakarta.validation.ValidatorFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.validation.Create;
+import ru.yandex.practicum.filmorate.validation.Update;
 
 import java.time.LocalDate;
 import java.util.Set;
@@ -91,6 +92,23 @@ class FilmValidationTest {
 		Film film = validFilm();
 		film.setDuration(null);
 		assertViolation(film, "duration");
+	}
+
+	@Test
+	void updateWithOnlyId_hasNoViolations() {
+		Film film = new Film();
+		film.setId(1L);
+		Set<ConstraintViolation<Film>> violations = validator.validate(film, Update.class);
+		assertThat(violations).isEmpty();
+	}
+
+	@Test
+	void blankNameOnUpdate_isInvalid() {
+		Film film = new Film();
+		film.setId(1L);
+		film.setName("   ");
+		assertThat(validator.validate(film, Update.class))
+				.anyMatch(v -> v.getPropertyPath().toString().equals("name"));
 	}
 
 	private static Film validFilm() {

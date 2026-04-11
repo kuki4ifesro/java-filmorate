@@ -110,6 +110,51 @@ class FilmControllerTest {
 	}
 
 	@Test
+	void updateWithOnlyId_isValidAndKeepsExistingFields() throws Exception {
+		Film full = new Film();
+		full.setName("Original");
+		full.setDescription("Desc");
+		full.setReleaseDate(LocalDate.of(2000, 1, 1));
+		full.setDuration(100);
+
+		String createdJson = mockMvc.perform(post("/films")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(objectMapper.writeValueAsString(full)))
+				.andExpect(status().isOk())
+				.andReturn()
+				.getResponse()
+				.getContentAsString(StandardCharsets.UTF_8);
+
+		Film created = objectMapper.readValue(createdJson, Film.class);
+
+		Film patch = new Film();
+		patch.setId(created.getId());
+
+		mockMvc.perform(put("/films")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(objectMapper.writeValueAsString(patch)))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.id").value(created.getId()))
+				.andExpect(jsonPath("$.name").value("Original"))
+				.andExpect(jsonPath("$.description").value("Desc"))
+				.andExpect(jsonPath("$.releaseDate").value("2000-01-01"))
+				.andExpect(jsonPath("$.duration").value(100));
+	}
+
+	@Test
+	void putBlankName_returnsBadRequest() throws Exception {
+		Film patch = new Film();
+		patch.setId(1L);
+		patch.setName("   ");
+
+		mockMvc.perform(put("/films")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(objectMapper.writeValueAsString(patch)))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.error").exists());
+	}
+
+	@Test
 	void putUnknownId_returnsNotFound() throws Exception {
 		Film film = new Film();
 		film.setId(999L);

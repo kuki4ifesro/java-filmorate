@@ -8,8 +8,6 @@ import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
-import ru.yandex.practicum.filmorate.validation.Create;
-import ru.yandex.practicum.filmorate.validation.PropertyValidationSupport;
 
 import java.util.Comparator;
 import java.util.List;
@@ -21,7 +19,6 @@ public class FilmService {
 
 	private final FilmStorage filmStorage;
 	private final UserStorage userStorage;
-	private final PropertyValidationSupport propertyValidation;
 
 	public Film create(Film film) {
 		Film created = filmStorage.create(film);
@@ -83,19 +80,15 @@ public class FilmService {
 
 	private void mergeFilm(Film target, Film patch) {
 		if (patch.getName() != null) {
-			propertyValidation.validatePropertyOrThrow(patch, "name", Create.class);
 			target.setName(patch.getName());
 		}
 		if (patch.getDescription() != null) {
-			propertyValidation.validatePropertyOrThrow(patch, "description", Create.class);
 			target.setDescription(patch.getDescription());
 		}
 		if (patch.getReleaseDate() != null) {
-			propertyValidation.validatePropertyOrThrow(patch, "releaseDate", Create.class);
 			target.setReleaseDate(patch.getReleaseDate());
 		}
 		if (patch.getDuration() != null) {
-			propertyValidation.validatePropertyOrThrow(patch, "duration", Create.class);
 			target.setDuration(patch.getDuration());
 		}
 	}
