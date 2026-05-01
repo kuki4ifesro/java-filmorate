@@ -1,11 +1,11 @@
 package ru.yandex.practicum.filmorate.storage;
 
-import lombok.RequiredArgsConstructor;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
-import org.springframework.context.annotation.Import;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.jdbc.Sql;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
@@ -22,12 +22,27 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @JdbcTest
 @AutoConfigureTestDatabase
-@RequiredArgsConstructor(onConstructor_ = @Autowired)
-@Import(FilmDbStorage.class)
 @Sql(scripts = {"/schema.sql", "/data.sql"})
 class FilmDbStorageTest {
 
-    private final FilmDbStorage filmStorage;
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
+
+	private FilmDbStorage filmStorage;
+
+	@AfterEach
+	void tearDown() {
+		jdbcTemplate.execute("DELETE FROM likes");
+		jdbcTemplate.execute("DELETE FROM film_genres");
+		jdbcTemplate.execute("DELETE FROM films");
+	}
+
+	private FilmDbStorage getFilmStorage() {
+		if (filmStorage == null) {
+			filmStorage = new FilmDbStorage(jdbcTemplate);
+		}
+		return filmStorage;
+	}
 
     @Test
     public void testCreateFilm() {
@@ -37,7 +52,7 @@ class FilmDbStorageTest {
         film.setReleaseDate(LocalDate.of(2000, 1, 1));
         film.setDuration(120);
 
-        Film created = filmStorage.create(film);
+        Film created = getFilmStorage().create(film);
 
         assertThat(created.getId()).isNotNull();
         assertThat(created.getName()).isEqualTo("Test Film");
@@ -51,9 +66,9 @@ class FilmDbStorageTest {
         film.setDescription("Test Description");
         film.setReleaseDate(LocalDate.of(2000, 1, 1));
         film.setDuration(120);
-        Film created = filmStorage.create(film);
+        Film created = getFilmStorage().create(film);
 
-        Optional<Film> filmOptional = filmStorage.findById(created.getId());
+        Optional<Film> filmOptional = getFilmStorage().findById(created.getId());
 
         assertThat(filmOptional)
                 .isPresent()
@@ -67,16 +82,16 @@ class FilmDbStorageTest {
         film1.setDescription("Test Description 1");
         film1.setReleaseDate(LocalDate.of(2000, 1, 1));
         film1.setDuration(120);
-        filmStorage.create(film1);
+        getFilmStorage().create(film1);
 
         Film film2 = new Film();
         film2.setName("Test Film 2");
         film2.setDescription("Test Description 2");
         film2.setReleaseDate(LocalDate.of(2005, 1, 1));
         film2.setDuration(90);
-        filmStorage.create(film2);
+        getFilmStorage().create(film2);
 
-        List<Film> films = filmStorage.findAll();
+        List<Film> films = getFilmStorage().findAll();
 
         assertThat(films).hasSizeGreaterThanOrEqualTo(2);
     }
@@ -88,11 +103,11 @@ class FilmDbStorageTest {
         film.setDescription("Test Description");
         film.setReleaseDate(LocalDate.of(2000, 1, 1));
         film.setDuration(120);
-        Film created = filmStorage.create(film);
+        Film created = getFilmStorage().create(film);
 
         created.setName("Updated Film");
         created.setDescription("Updated Description");
-        Film updated = filmStorage.update(created);
+        Film updated = getFilmStorage().update(created);
 
         assertThat(updated.getName()).isEqualTo("Updated Film");
         assertThat(updated.getDescription()).isEqualTo("Updated Description");
@@ -105,11 +120,11 @@ class FilmDbStorageTest {
         film.setDescription("Test Description");
         film.setReleaseDate(LocalDate.of(2000, 1, 1));
         film.setDuration(120);
-        Film created = filmStorage.create(film);
+        Film created = getFilmStorage().create(film);
 
-        filmStorage.delete(created.getId());
+        getFilmStorage().delete(created.getId());
 
-        Optional<Film> filmOptional = filmStorage.findById(created.getId());
+        Optional<Film> filmOptional = getFilmStorage().findById(created.getId());
         assertThat(filmOptional).isEmpty();
     }
 
@@ -120,11 +135,11 @@ class FilmDbStorageTest {
         film.setDescription("Test Description");
         film.setReleaseDate(LocalDate.of(2000, 1, 1));
         film.setDuration(120);
-        Film created = filmStorage.create(film);
+        Film created = getFilmStorage().create(film);
 
-        filmStorage.addLike(created.getId(), 1L);
+        getFilmStorage().addLike(created.getId(), 1L);
 
-        Optional<Film> filmOptional = filmStorage.findById(created.getId());
+        Optional<Film> filmOptional = getFilmStorage().findById(created.getId());
         assertThat(filmOptional)
                 .isPresent()
                 .hasValueSatisfying(f -> assertThat(f.getLikes()).contains(1L));
@@ -137,12 +152,12 @@ class FilmDbStorageTest {
         film.setDescription("Test Description");
         film.setReleaseDate(LocalDate.of(2000, 1, 1));
         film.setDuration(120);
-        Film created = filmStorage.create(film);
+        Film created = getFilmStorage().create(film);
 
-        filmStorage.addLike(created.getId(), 1L);
-        filmStorage.removeLike(created.getId(), 1L);
+        getFilmStorage().addLike(created.getId(), 1L);
+        getFilmStorage().removeLike(created.getId(), 1L);
 
-        Optional<Film> filmOptional = filmStorage.findById(created.getId());
+        Optional<Film> filmOptional = getFilmStorage().findById(created.getId());
         assertThat(filmOptional)
                 .isPresent()
                 .hasValueSatisfying(f -> assertThat(f.getLikes()).doesNotContain(1L));
@@ -169,9 +184,9 @@ class FilmDbStorageTest {
         genres.add(genre2);
         film.setGenres(genres);
 
-        Film created = filmStorage.create(film);
+        Film created = getFilmStorage().create(film);
 
-        Optional<Film> filmOptional = filmStorage.findById(created.getId());
+        Optional<Film> filmOptional = getFilmStorage().findById(created.getId());
         assertThat(filmOptional)
                 .isPresent()
                 .hasValueSatisfying(f -> {

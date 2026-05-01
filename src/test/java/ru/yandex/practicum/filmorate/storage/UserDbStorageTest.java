@@ -1,11 +1,11 @@
 package ru.yandex.practicum.filmorate.storage;
 
-import lombok.RequiredArgsConstructor;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
-import org.springframework.context.annotation.Import;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.jdbc.Sql;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserDbStorage;
@@ -18,12 +18,26 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @JdbcTest
 @AutoConfigureTestDatabase
-@RequiredArgsConstructor(onConstructor_ = @Autowired)
-@Import(UserDbStorage.class)
 @Sql(scripts = {"/schema.sql", "/data.sql"})
 class UserDbStorageTest {
 
-    private final UserDbStorage userStorage;
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
+
+	private UserDbStorage userStorage;
+
+	@AfterEach
+	void tearDown() {
+		jdbcTemplate.execute("DELETE FROM friends");
+		jdbcTemplate.execute("DELETE FROM users");
+	}
+
+	private UserDbStorage getUserStorage() {
+		if (userStorage == null) {
+			userStorage = new UserDbStorage(jdbcTemplate);
+		}
+		return userStorage;
+	}
 
     @Test
     public void testCreateUser() {
@@ -33,7 +47,7 @@ class UserDbStorageTest {
         user.setName("Test User");
         user.setBirthday(LocalDate.of(1990, 1, 1));
 
-        User created = userStorage.create(user);
+        User created = getUserStorage().create(user);
 
         assertThat(created.getId()).isNotNull();
         assertThat(created.getEmail()).isEqualTo("test@example.com");
@@ -47,9 +61,9 @@ class UserDbStorageTest {
         user.setLogin("testlogin");
         user.setName("Test User");
         user.setBirthday(LocalDate.of(1990, 1, 1));
-        User created = userStorage.create(user);
+        User created = getUserStorage().create(user);
 
-        Optional<User> userOptional = userStorage.findById(created.getId());
+        Optional<User> userOptional = getUserStorage().findById(created.getId());
 
         assertThat(userOptional)
                 .isPresent()
@@ -63,16 +77,16 @@ class UserDbStorageTest {
         user1.setLogin("testlogin1");
         user1.setName("Test User 1");
         user1.setBirthday(LocalDate.of(1990, 1, 1));
-        userStorage.create(user1);
+        getUserStorage().create(user1);
 
         User user2 = new User();
         user2.setEmail("test2@example.com");
         user2.setLogin("testlogin2");
         user2.setName("Test User 2");
         user2.setBirthday(LocalDate.of(1995, 1, 1));
-        userStorage.create(user2);
+        getUserStorage().create(user2);
 
-        List<User> users = userStorage.findAll();
+        List<User> users = getUserStorage().findAll();
 
         assertThat(users).hasSizeGreaterThanOrEqualTo(2);
     }
@@ -84,11 +98,11 @@ class UserDbStorageTest {
         user.setLogin("testlogin");
         user.setName("Test User");
         user.setBirthday(LocalDate.of(1990, 1, 1));
-        User created = userStorage.create(user);
+        User created = getUserStorage().create(user);
 
         created.setEmail("updated@example.com");
         created.setName("Updated Name");
-        User updated = userStorage.update(created);
+        User updated = getUserStorage().update(created);
 
         assertThat(updated.getEmail()).isEqualTo("updated@example.com");
         assertThat(updated.getName()).isEqualTo("Updated Name");
@@ -101,11 +115,11 @@ class UserDbStorageTest {
         user.setLogin("testlogin");
         user.setName("Test User");
         user.setBirthday(LocalDate.of(1990, 1, 1));
-        User created = userStorage.create(user);
+        User created = getUserStorage().create(user);
 
-        userStorage.delete(created.getId());
+        getUserStorage().delete(created.getId());
 
-        Optional<User> userOptional = userStorage.findById(created.getId());
+        Optional<User> userOptional = getUserStorage().findById(created.getId());
         assertThat(userOptional).isEmpty();
     }
 
@@ -116,18 +130,18 @@ class UserDbStorageTest {
         user1.setLogin("testlogin1");
         user1.setName("Test User 1");
         user1.setBirthday(LocalDate.of(1990, 1, 1));
-        User created1 = userStorage.create(user1);
+        User created1 = getUserStorage().create(user1);
 
         User user2 = new User();
         user2.setEmail("test2@example.com");
         user2.setLogin("testlogin2");
         user2.setName("Test User 2");
         user2.setBirthday(LocalDate.of(1995, 1, 1));
-        User created2 = userStorage.create(user2);
+        User created2 = getUserStorage().create(user2);
 
-        userStorage.addFriend(created1.getId(), created2.getId());
+        getUserStorage().addFriend(created1.getId(), created2.getId());
 
-        Optional<User> userOptional = userStorage.findById(created1.getId());
+        Optional<User> userOptional = getUserStorage().findById(created1.getId());
         assertThat(userOptional)
                 .isPresent()
                 .hasValueSatisfying(u -> assertThat(u.getFriends()).contains(created2.getId()));
@@ -140,19 +154,19 @@ class UserDbStorageTest {
         user1.setLogin("testlogin1");
         user1.setName("Test User 1");
         user1.setBirthday(LocalDate.of(1990, 1, 1));
-        User created1 = userStorage.create(user1);
+        User created1 = getUserStorage().create(user1);
 
         User user2 = new User();
         user2.setEmail("test2@example.com");
         user2.setLogin("testlogin2");
         user2.setName("Test User 2");
         user2.setBirthday(LocalDate.of(1995, 1, 1));
-        User created2 = userStorage.create(user2);
+        User created2 = getUserStorage().create(user2);
 
-        userStorage.addFriend(created1.getId(), created2.getId());
-        userStorage.removeFriend(created1.getId(), created2.getId());
+        getUserStorage().addFriend(created1.getId(), created2.getId());
+        getUserStorage().removeFriend(created1.getId(), created2.getId());
 
-        Optional<User> userOptional = userStorage.findById(created1.getId());
+        Optional<User> userOptional = getUserStorage().findById(created1.getId());
         assertThat(userOptional)
                 .isPresent()
                 .hasValueSatisfying(u -> assertThat(u.getFriends()).doesNotContain(created2.getId()));
