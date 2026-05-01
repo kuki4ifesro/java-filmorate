@@ -143,7 +143,7 @@ public class FilmDbStorage implements FilmStorage {
             film.setDescription(rs.getString("description"));
             film.setReleaseDate(rs.getDate("release_date").toLocalDate());
             film.setDuration(rs.getInt("duration"));
-            
+
             Long mpaId = rs.getLong("mpa_id");
             if (!rs.wasNull()) {
                 Mpa mpa = new Mpa();
