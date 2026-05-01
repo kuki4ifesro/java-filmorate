@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.ResourceNotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
@@ -17,7 +18,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class FilmService {
 
+	@Qualifier("filmDbStorage")
 	private final FilmStorage filmStorage;
+	@Qualifier("userDbStorage")
 	private final UserStorage userStorage;
 
 	public Film create(Film film) {
@@ -45,16 +48,24 @@ public class FilmService {
 	public void addLike(Long filmId, Long userId) {
 		Film film = getRequired(filmId);
 		ensureUserExists(userId);
-		film.getLikes().add(userId);
-		filmStorage.update(film);
+		if (filmStorage instanceof ru.yandex.practicum.filmorate.storage.film.FilmDbStorage) {
+			((ru.yandex.practicum.filmorate.storage.film.FilmDbStorage) filmStorage).addLike(filmId, userId);
+		} else {
+			film.getLikes().add(userId);
+			filmStorage.update(film);
+		}
 		log.info("Пользователь {} поставил лайк фильму {}", userId, filmId);
 	}
 
 	public void removeLike(Long filmId, Long userId) {
 		Film film = getRequired(filmId);
 		ensureUserExists(userId);
-		film.getLikes().remove(userId);
-		filmStorage.update(film);
+		if (filmStorage instanceof ru.yandex.practicum.filmorate.storage.film.FilmDbStorage) {
+			((ru.yandex.practicum.filmorate.storage.film.FilmDbStorage) filmStorage).removeLike(filmId, userId);
+		} else {
+			film.getLikes().remove(userId);
+			filmStorage.update(film);
+		}
 		log.info("Пользователь {} удалил лайк у фильма {}", userId, filmId);
 	}
 
@@ -90,6 +101,12 @@ public class FilmService {
 		}
 		if (patch.getDuration() != null) {
 			target.setDuration(patch.getDuration());
+		}
+		if (patch.getMpa() != null) {
+			target.setMpa(patch.getMpa());
+		}
+		if (patch.getGenres() != null) {
+			target.setGenres(patch.getGenres());
 		}
 	}
 }

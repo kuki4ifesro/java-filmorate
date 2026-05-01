@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.ResourceNotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UserService {
 
+	@Qualifier("userDbStorage")
 	private final UserStorage userStorage;
 	private final PropertyValidationSupport propertyValidation;
 
@@ -49,9 +51,11 @@ public class UserService {
 		User user = getRequired(id);
 		User friend = getRequired(friendId);
 		user.getFriends().add(friendId);
-		friend.getFriends().add(id);
-		userStorage.update(user);
-		userStorage.update(friend);
+		if (userStorage instanceof ru.yandex.practicum.filmorate.storage.user.UserDbStorage) {
+			((ru.yandex.practicum.filmorate.storage.user.UserDbStorage) userStorage).addFriend(id, friendId);
+		} else {
+			userStorage.update(user);
+		}
 		log.info("Пользователь {} добавил в друзья {}", id, friendId);
 	}
 
@@ -59,9 +63,11 @@ public class UserService {
 		User user = getRequired(id);
 		User friend = getRequired(friendId);
 		user.getFriends().remove(friendId);
-		friend.getFriends().remove(id);
-		userStorage.update(user);
-		userStorage.update(friend);
+		if (userStorage instanceof ru.yandex.practicum.filmorate.storage.user.UserDbStorage) {
+			((ru.yandex.practicum.filmorate.storage.user.UserDbStorage) userStorage).removeFriend(id, friendId);
+		} else {
+			userStorage.update(user);
+		}
 		log.info("Пользователь {} удалил из друзей {}", id, friendId);
 	}
 
