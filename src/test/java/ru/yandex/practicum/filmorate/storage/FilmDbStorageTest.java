@@ -44,6 +44,17 @@ class FilmDbStorageTest {
 		return filmStorage;
 	}
 
+	private void ensureUserExistsForLikes() {
+		jdbcTemplate.update(
+				"MERGE INTO users (id, email, login, name, birthday) KEY(id) VALUES (?, ?, ?, ?, ?)",
+				1L,
+				"like-user@example.com",
+				"likeuser",
+				"Like User",
+				java.sql.Date.valueOf(LocalDate.of(1990, 1, 1))
+		);
+	}
+
     @Test
     public void testCreateFilm() {
         Film film = new Film();
@@ -137,6 +148,8 @@ class FilmDbStorageTest {
         film.setDuration(120);
         Film created = getFilmStorage().create(film);
 
+        ensureUserExistsForLikes();
+
         getFilmStorage().addLike(created.getId(), 1L);
 
         Optional<Film> filmOptional = getFilmStorage().findById(created.getId());
@@ -153,6 +166,8 @@ class FilmDbStorageTest {
         film.setReleaseDate(LocalDate.of(2000, 1, 1));
         film.setDuration(120);
         Film created = getFilmStorage().create(film);
+
+        ensureUserExistsForLikes();
 
         getFilmStorage().addLike(created.getId(), 1L);
         getFilmStorage().removeLike(created.getId(), 1L);
