@@ -21,7 +21,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(properties = {
-	"spring.datasource.url=jdbc:h2:mem:testdb"
+	"spring.datasource.url=jdbc:h2:mem:testdb",
+	"spring.sql.init.mode=always",
+	"spring.sql.init.schema-locations=classpath:schema.sql",
+	"spring.sql.init.data-locations=classpath:data.sql"
 })
 @AutoConfigureMockMvc
 class FilmControllerTest {
