@@ -7,11 +7,16 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.ResourceNotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.storage.genre.GenreDbStorage;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.mpa.MpaDbStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -19,15 +24,22 @@ public class FilmService {
 
 	private final FilmStorage filmStorage;
 	private final UserStorage userStorage;
+	private final MpaDbStorage mpaDbStorage;
+	private final GenreDbStorage genreDbStorage;
 
 	@Autowired
 	public FilmService(@Qualifier("filmDbStorage") FilmStorage filmStorage,
-					  @Qualifier("userDbStorage") UserStorage userStorage) {
+					  @Qualifier("userDbStorage") UserStorage userStorage,
+					  MpaDbStorage mpaDbStorage,
+					  GenreDbStorage genreDbStorage) {
 		this.filmStorage = filmStorage;
 		this.userStorage = userStorage;
+		this.mpaDbStorage = mpaDbStorage;
+		this.genreDbStorage = genreDbStorage;
 	}
 
 	public Film create(Film film) {
+		validateFilmReferences(film);
 		Film created = filmStorage.create(film);
 		log.info("Добавлен фильм id={}, name={}", created.getId(), created.getName());
 		return created;
@@ -36,6 +48,7 @@ public class FilmService {
 	public Film update(Film patch) {
 		Film existing = getRequired(patch.getId());
 		mergeFilm(existing, patch);
+		validateFilmReferences(existing);
 		Film updated = filmStorage.update(existing);
 		log.info("Обновлён фильм id={}, name={}", updated.getId(), updated.getName());
 		return updated;
@@ -91,6 +104,32 @@ public class FilmService {
 	private void ensureUserExists(Long userId) {
 		userStorage.findById(userId)
 				.orElseThrow(() -> new ResourceNotFoundException("Пользователь с id=" + userId + " не найден"));
+	}
+
+	private void validateFilmReferences(Film film) {
+		if (film.getMpa() != null) {
+			Long mpaId = film.getMpa().getId();
+			if (mpaId == null) {
+				throw new ValidationException("Идентификатор рейтинга должен быть указан");
+			}
+			mpaDbStorage.findById(mpaId)
+					.orElseThrow(() -> new ResourceNotFoundException("Рейтинг с id=" + mpaId + " не найден"));
+		}
+
+		if (film.getGenres() == null || film.getGenres().isEmpty()) {
+			return;
+		}
+
+		Set<Genre> resolvedGenres = new LinkedHashSet<>();
+		for (Genre genre : film.getGenres()) {
+			if (genre == null || genre.getId() == null) {
+				throw new ValidationException("Идентификатор жанра должен быть указан");
+			}
+			Genre resolved = genreDbStorage.findById(genre.getId())
+					.orElseThrow(() -> new ResourceNotFoundException("Жанр с id=" + genre.getId() + " не найден"));
+			resolvedGenres.add(resolved);
+		}
+		film.setGenres(resolvedGenres);
 	}
 
 	private void mergeFilm(Film target, Film patch) {
