@@ -20,7 +20,15 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
+@SpringBootTest(properties = {
+	"spring.datasource.url=jdbc:h2:mem:testdb",
+	"spring.datasource.driverClassName=org.h2.Driver",
+	"spring.datasource.username=sa",
+	"spring.datasource.password=",
+	"spring.sql.init.mode=always",
+	"spring.sql.init.schema-locations=classpath:schema.sql",
+	"spring.sql.init.data-locations=classpath:data.sql"
+})
 @AutoConfigureMockMvc
 class FilmControllerTest {
 

@@ -13,6 +13,10 @@ public interface FilmStorage {
 
 	void delete(Long filmId);
 
+	void addLike(Long filmId, Long userId);
+
+	void removeLike(Long filmId, Long userId);
+
 	List<Film> findAll();
 
 	Optional<Film> findById(Long filmId);

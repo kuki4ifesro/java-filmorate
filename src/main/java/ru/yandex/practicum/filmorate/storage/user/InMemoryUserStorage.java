@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.storage.user;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.User;
 
@@ -11,6 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Component
+@Qualifier("inMemoryUserStorage")
 public class InMemoryUserStorage implements UserStorage {
 
 	private final Map<Long, User> users = new ConcurrentHashMap<>();
@@ -42,5 +44,21 @@ public class InMemoryUserStorage implements UserStorage {
 	@Override
 	public Optional<User> findById(Long userId) {
 		return Optional.ofNullable(users.get(userId));
+	}
+
+	@Override
+	public void addFriend(Long userId, Long friendId) {
+		User user = users.get(userId);
+		if (user != null) {
+			user.getFriends().add(friendId);
+		}
+	}
+
+	@Override
+	public void removeFriend(Long userId, Long friendId) {
+		User user = users.get(userId);
+		if (user != null) {
+			user.getFriends().remove(friendId);
+		}
 	}
 }

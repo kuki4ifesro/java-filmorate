@@ -1,7 +1,8 @@
 package ru.yandex.practicum.filmorate.service;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.ResourceNotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
@@ -16,11 +17,17 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class UserService {
 
 	private final UserStorage userStorage;
 	private final PropertyValidationSupport propertyValidation;
+
+	@Autowired
+	public UserService(@Qualifier("userDbStorage") UserStorage userStorage,
+					   PropertyValidationSupport propertyValidation) {
+		this.userStorage = userStorage;
+		this.propertyValidation = propertyValidation;
+	}
 
 	public User create(User user) {
 		normalizeName(user);
@@ -46,22 +53,16 @@ public class UserService {
 	}
 
 	public void addFriend(Long id, Long friendId) {
-		User user = getRequired(id);
-		User friend = getRequired(friendId);
-		user.getFriends().add(friendId);
-		friend.getFriends().add(id);
-		userStorage.update(user);
-		userStorage.update(friend);
+		getRequired(id);
+		getRequired(friendId);
+		userStorage.addFriend(id, friendId);
 		log.info("Пользователь {} добавил в друзья {}", id, friendId);
 	}
 
 	public void removeFriend(Long id, Long friendId) {
-		User user = getRequired(id);
-		User friend = getRequired(friendId);
-		user.getFriends().remove(friendId);
-		friend.getFriends().remove(id);
-		userStorage.update(user);
-		userStorage.update(friend);
+		getRequired(id);
+		getRequired(friendId);
+		userStorage.removeFriend(id, friendId);
 		log.info("Пользователь {} удалил из друзей {}", id, friendId);
 	}
 

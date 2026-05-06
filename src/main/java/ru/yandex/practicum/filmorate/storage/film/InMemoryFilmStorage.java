@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.storage.film;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.Film;
 
@@ -11,6 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Component
+@Qualifier("inMemoryFilmStorage")
 public class InMemoryFilmStorage implements FilmStorage {
 
 	private final Map<Long, Film> films = new ConcurrentHashMap<>();
@@ -42,5 +44,21 @@ public class InMemoryFilmStorage implements FilmStorage {
 	@Override
 	public Optional<Film> findById(Long filmId) {
 		return Optional.ofNullable(films.get(filmId));
+	}
+
+	@Override
+	public void addLike(Long filmId, Long userId) {
+		Film film = films.get(filmId);
+		if (film != null) {
+			film.getLikes().add(userId);
+		}
+	}
+
+	@Override
+	public void removeLike(Long filmId, Long userId) {
+		Film film = films.get(filmId);
+		if (film != null) {
+			film.getLikes().remove(userId);
+		}
 	}
 }

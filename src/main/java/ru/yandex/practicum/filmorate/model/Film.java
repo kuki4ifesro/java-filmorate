@@ -12,6 +12,7 @@ import ru.yandex.practicum.filmorate.validation.Update;
 
 import java.time.LocalDate;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 @Data
@@ -31,4 +32,6 @@ public class Film {
 	@Positive(message = "Продолжительность фильма должна быть положительным числом", groups = {Create.class, Update.class})
 	private Integer duration;
 	private Set<Long> likes = new HashSet<>();
+	private Mpa mpa;
+	private Set<Genre> genres = new LinkedHashSet<>();
 }
