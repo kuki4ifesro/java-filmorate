@@ -16,7 +16,9 @@ import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -63,26 +65,16 @@ public class FilmService {
 	}
 
 	public void addLike(Long filmId, Long userId) {
-		Film film = getRequired(filmId);
+		getRequired(filmId);
 		ensureUserExists(userId);
-		if (filmStorage instanceof ru.yandex.practicum.filmorate.storage.film.FilmDbStorage) {
-			((ru.yandex.practicum.filmorate.storage.film.FilmDbStorage) filmStorage).addLike(filmId, userId);
-		} else {
-			film.getLikes().add(userId);
-			filmStorage.update(film);
-		}
+		filmStorage.addLike(filmId, userId);
 		log.info("Пользователь {} поставил лайк фильму {}", userId, filmId);
 	}
 
 	public void removeLike(Long filmId, Long userId) {
-		Film film = getRequired(filmId);
+		getRequired(filmId);
 		ensureUserExists(userId);
-		if (filmStorage instanceof ru.yandex.practicum.filmorate.storage.film.FilmDbStorage) {
-			((ru.yandex.practicum.filmorate.storage.film.FilmDbStorage) filmStorage).removeLike(filmId, userId);
-		} else {
-			film.getLikes().remove(userId);
-			filmStorage.update(film);
-		}
+		filmStorage.removeLike(filmId, userId);
 		log.info("Пользователь {} удалил лайк у фильма {}", userId, filmId);
 	}
 
@@ -120,13 +112,22 @@ public class FilmService {
 			return;
 		}
 
+		Set<Long> genreIds = film.getGenres().stream()
+				.map(genre -> {
+					if (genre == null || genre.getId() == null) {
+						throw new ValidationException("Идентификатор жанра должен быть указан");
+					}
+					return genre.getId();
+				})
+				.collect(Collectors.toCollection(LinkedHashSet::new));
+
+		Map<Long, Genre> genresById = genreDbStorage.findByIds(genreIds);
 		Set<Genre> resolvedGenres = new LinkedHashSet<>();
-		for (Genre genre : film.getGenres()) {
-			if (genre == null || genre.getId() == null) {
-				throw new ValidationException("Идентификатор жанра должен быть указан");
+		for (Long genreId : genreIds) {
+			Genre resolved = genresById.get(genreId);
+			if (resolved == null) {
+				throw new ResourceNotFoundException("Жанр с id=" + genreId + " не найден");
 			}
-			Genre resolved = genreDbStorage.findById(genre.getId())
-					.orElseThrow(() -> new ResourceNotFoundException("Жанр с id=" + genre.getId() + " не найден"));
 			resolvedGenres.add(resolved);
 		}
 		film.setGenres(resolvedGenres);

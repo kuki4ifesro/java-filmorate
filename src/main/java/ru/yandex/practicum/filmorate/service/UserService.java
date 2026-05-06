@@ -53,26 +53,16 @@ public class UserService {
 	}
 
 	public void addFriend(Long id, Long friendId) {
-		User user = getRequired(id);
-		User friend = getRequired(friendId);
-		user.getFriends().add(friendId);
-		if (userStorage instanceof ru.yandex.practicum.filmorate.storage.user.UserDbStorage) {
-			((ru.yandex.practicum.filmorate.storage.user.UserDbStorage) userStorage).addFriend(id, friendId);
-		} else {
-			userStorage.update(user);
-		}
+		getRequired(id);
+		getRequired(friendId);
+		userStorage.addFriend(id, friendId);
 		log.info("Пользователь {} добавил в друзья {}", id, friendId);
 	}
 
 	public void removeFriend(Long id, Long friendId) {
-		User user = getRequired(id);
-		User friend = getRequired(friendId);
-		user.getFriends().remove(friendId);
-		if (userStorage instanceof ru.yandex.practicum.filmorate.storage.user.UserDbStorage) {
-			((ru.yandex.practicum.filmorate.storage.user.UserDbStorage) userStorage).removeFriend(id, friendId);
-		} else {
-			userStorage.update(user);
-		}
+		getRequired(id);
+		getRequired(friendId);
+		userStorage.removeFriend(id, friendId);
 		log.info("Пользователь {} удалил из друзей {}", id, friendId);
 	}
 

@@ -45,4 +45,20 @@ public class InMemoryFilmStorage implements FilmStorage {
 	public Optional<Film> findById(Long filmId) {
 		return Optional.ofNullable(films.get(filmId));
 	}
+
+	@Override
+	public void addLike(Long filmId, Long userId) {
+		Film film = films.get(filmId);
+		if (film != null) {
+			film.getLikes().add(userId);
+		}
+	}
+
+	@Override
+	public void removeLike(Long filmId, Long userId) {
+		Film film = films.get(filmId);
+		if (film != null) {
+			film.getLikes().remove(userId);
+		}
+	}
 }
