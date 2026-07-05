@@ -1,63 +1,107 @@
 package ru.yandex.practicum.filmorate.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import lombok.extern.slf4j.Slf4j;
+import ru.yandex.practicum.filmorate.exceptions.BadRequestException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.controller.mapper.FilmMapper;
+import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
-import ru.yandex.practicum.filmorate.validation.Create;
-import ru.yandex.practicum.filmorate.validation.Update;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
-@Validated
+@Slf4j
 @RestController
 @RequestMapping("/films")
 @RequiredArgsConstructor
 public class FilmController {
 
-	private final FilmService filmService;
+    private final FilmService service;
 
-	@GetMapping
-	public List<Film> findAll() {
-		return filmService.findAll();
-	}
+    @PostMapping
+    public ResponseEntity<FilmDto> create(@RequestBody @Valid FilmDto dto) {
+        FilmDto created = service.create(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
 
-	@GetMapping("/{id}")
-	public Film findById(@PathVariable Long id) {
-		return filmService.findById(id);
-	}
+    @PutMapping
+    public ResponseEntity<FilmDto> updateFilm(@RequestBody @Valid FilmDto dto) {
+        if (dto.getId() == null) {
+            throw new BadRequestException("ID фильма обязателен для обновления");
+        }
 
-	@PostMapping
-	public Film create(@Validated(Create.class) @RequestBody Film film) {
-		return filmService.create(film);
-	}
+        FilmDto updatedFilm = service.update(dto);
+        return ResponseEntity.ok(updatedFilm);
+    }
 
-	@PutMapping
-	public Film update(@Validated(Update.class) @RequestBody Film patch) {
-		return filmService.update(patch);
-	}
+    @GetMapping
+    public ResponseEntity<List<FilmDto>> getAll() {
+        log.info("Запрошен вывод всех фильмов");
+        List<FilmDto> films = service.getAll();
+        return ResponseEntity.status(HttpStatus.OK).body(films);
+    }
 
-	@PutMapping("/{id}/like/{userId}")
-	public void addLike(@PathVariable Long id, @PathVariable Long userId) {
-		filmService.addLike(id, userId);
-	}
+    @GetMapping("/{id}")
+    public FilmDto getById(@PathVariable Long id) {
+        log.info("Запрошены данные фильма с ID {}", id);
+        return service.getById(id);
+    }
 
-	@DeleteMapping("/{id}/like/{userId}")
-	public void removeLike(@PathVariable Long id, @PathVariable Long userId) {
-		filmService.removeLike(id, userId);
-	}
+    @PutMapping("/{id}/like/{userId}")
+    public void addLike(@PathVariable Long id, @PathVariable Long userId) {
+        log.info("Пользователь с ID {} поставил лайк фильму с ID {}", userId, id);
+        service.addLike(id, userId);
+    }
 
-	@GetMapping("/popular")
-	public List<Film> getPopular(@RequestParam(defaultValue = "10") int count) {
-		return filmService.getPopular(count);
-	}
+    @DeleteMapping("/{id}/like/{userId}")
+    public void deleteLike(@PathVariable Long id, @PathVariable Long userId) {
+        log.info("Пользователь с ID {} убрал лайк у фильма с ID {}", userId, id);
+        service.deleteLike(id, userId);
+    }
+
+    @GetMapping("/popular")
+    public ResponseEntity<List<FilmDto>> getPopularFilmsByGenreAndYear(
+            @RequestParam(defaultValue = "10") Long count,
+            @RequestParam(required = false) Long genreId,
+            @RequestParam(required = false) Long year) {
+
+        log.info("Запрошен топ-{} фильмов. Жанр: {}, Год: {}", count, genreId, year);
+
+        List<FilmDto> popularFilmsByGenreAndYear = service.getPopularFilmsByGenreAndYear(count, genreId, year);
+        return ResponseEntity.status(HttpStatus.OK).body(popularFilmsByGenreAndYear);
+    }
+
+    @GetMapping("/director/{directorId}")
+    public List<FilmDto> getFilmsByDirector(@PathVariable Long directorId,
+                                            @RequestParam(defaultValue = "likes") String sortBy) {
+        log.info("Запрошены фильмы режиссера с ID {} с сортировкой по {}", directorId, sortBy);
+        List<Film> films = service.getFilmsByDirector(directorId, sortBy);
+        return films.stream()
+                .map(FilmMapper::mapToFilmDto)
+                .collect(Collectors.toList());
+    }
+
+    @GetMapping("/common")
+    public List<FilmDto> getCommonFilms(@RequestParam Long userId,
+                                        @RequestParam Long friendId) {
+        log.info("Запрошены общие фильмы пользователей с ID {} и {}", userId, friendId);
+        return service.getCommonFilms(userId, friendId);
+    }
+
+    @DeleteMapping("/{filmId}")
+    public void deleteFilm(@PathVariable Long filmId) {
+        log.info("Запрос на удаление фильма: {}", filmId);
+        service.deleteFilm(filmId);
+    }
+
+    @GetMapping("/search")
+    public List<FilmDto> searchFilms(@RequestParam String query,
+                                  @RequestParam(defaultValue = "title,director") String by) {
+        return service.searchFilms(query, by);
+    }
 }
